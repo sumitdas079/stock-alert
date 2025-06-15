@@ -8,7 +8,11 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # Set the working directory inside the container
+RUN adduser -D appuser
 WORKDIR /stock-alert
+
+# Set permissions on the directory (as root)
+RUN mkdir -p /stock-alert && chmod -R 777 /stock-alert
 
 # Copy only requirements first to leverage Docker's caching
 COPY requirements.txt .
@@ -16,8 +20,14 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Optionally remove build dependencies to slim the image
+RUN apk del build-base gcc musl-dev python3-dev libressl-dev libffi-dev
+
 # Copy the whole project
 COPY . .
+
+# Change user to non-root user
+USER appuser
 
 # Command to run FastAPI using Uvicorn
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
