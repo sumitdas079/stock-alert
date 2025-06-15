@@ -1,5 +1,5 @@
 # Use an official Python runtime as the base image
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 # Set environment variables to ensure Python outputs logs to stdout/stderr
 ENV PYTHONUNBUFFERED=1
@@ -7,7 +7,16 @@ ENV PYTHONUNBUFFERED=1
 # Set environment variables to prevent Python from writing .pyc files and to buffer stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Set the working directory inside the container
+# Install system dependencies using apk
+RUN apk add --no-cache \
+    build-base \
+    libffi-dev \
+    gcc \
+    musl-dev \
+    python3-dev \
+    libressl-dev
+
+# Create a non-root user and set workdir
 RUN adduser -D appuser
 WORKDIR /stock-alert
 
@@ -29,5 +38,8 @@ COPY . .
 # Change user to non-root user
 USER appuser
 
+# Expose the application port
+EXPOSE 8000
+
 # Command to run FastAPI using Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
